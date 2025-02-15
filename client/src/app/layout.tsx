@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/mode-provider"
 import { Geist, Geist_Mono } from "next/font/google";
+import Provider from "../components/Providers";
+import { type ReactNode } from 'react'
+import { headers } from 'next/headers'
+import { cookieToInitialState } from 'wagmi'
+import getConfig from "next/config";
 import "./globals.css";
+import ConnectionProviderLayout from "@/components/ConnectionProviderLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,20 +21,31 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AxiomDAO",
-  description: "AI-driven governance system",
+  description: "AI-driven Governance System",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const initialState = cookieToInitialState(
+    getConfig(),
+    (await headers()).get('cookie')
+  )
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Provider initialState={initialState}>
+            <ConnectionProviderLayout>
+              {children}
+            </ConnectionProviderLayout>
+          </Provider>
+        </ThemeProvider>
       </body>
     </html>
   );
