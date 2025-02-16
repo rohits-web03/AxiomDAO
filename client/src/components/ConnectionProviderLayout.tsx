@@ -9,7 +9,7 @@ import { type ReactNode, useEffect } from 'react';
 export default function ConnectionProviderLayout({ children }: { children: ReactNode }) {
     const { connect } = useConnect();
     const { disconnect } = useDisconnect();
-    const { address, isConnected } = useAccount();
+    const { address, isConnected, status } = useAccount();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -36,10 +36,12 @@ export default function ConnectionProviderLayout({ children }: { children: React
     }, [isConnected, address]);
 
     useEffect(() => {
-        if (pathname !== '/' && !address) {
-            router.push('/');
-        }
-    }, [address, router]);
+        setTimeout(() => {
+            if (status !== "connecting" && status === "disconnected" && pathname !== "/") {
+                router.push("/");
+            }
+        }, 1000)
+    }, [status, pathname, router]);
 
     return (
         <div>

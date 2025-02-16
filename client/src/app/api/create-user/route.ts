@@ -24,7 +24,6 @@ export async function POST(req: Request) {
                 data: { public_key: publicKey },
             });
         }
-        console.log("User created")
         return NextResponse.json({ success: true, user }, { status: 201 });
     } catch (error) {
         console.error("Error creating user:", error);
