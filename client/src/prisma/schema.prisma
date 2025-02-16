@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  public_key  String      @unique
+  daos        Dao[]       @relation("CreatedDAOs")
+  memberships DaoMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dao {
+  id              Int    @id @default(autoincrement())
+  daoname         String
+  tokenname       String
+  tokensymbol     String
+  contractAddress String @unique
+  creatorID       Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator User        @relation("CreatedDAOs", fields: [creatorID], references: [id], onDelete: Cascade)
+  members DaoMember[]
+}
+
+model DaoMember {
+  id     Int @id @default(autoincrement())
+  daoID  Int
+  userID Int
+
+  dao  Dao  @relation(fields: [daoID], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userID], references: [id], onDelete: Cascade)
+
+  @@unique([daoID, userID])
+}

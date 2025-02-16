@@ -9,9 +9,31 @@ import { type ReactNode, useEffect } from 'react';
 export default function ConnectionProviderLayout({ children }: { children: ReactNode }) {
     const { connect } = useConnect();
     const { disconnect } = useDisconnect();
-    const { address } = useAccount();
+    const { address, isConnected } = useAccount();
     const router = useRouter();
     const pathname = usePathname();
+
+    const handleConnect = async () => {
+        console.log("Connecting wallet...");
+        try {
+            connect({ connector: injected() });
+        } catch (error) {
+            console.error("Error connecting wallet:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (isConnected && address) {
+            console.log("Wallet connected:", address);
+            fetch("/api/create-user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ publicKey: address }),
+            }).catch((err) => console.error("Error storing user:", err));
+        }
+    }, [isConnected, address]);
 
     useEffect(() => {
         if (pathname !== '/' && !address) {
@@ -32,7 +54,7 @@ export default function ConnectionProviderLayout({ children }: { children: React
                         </Button>
                     </div>
                 ) : (
-                    <Button onClick={() => connect({ connector: injected() })}>
+                    <Button onClick={handleConnect}>
                         Connect Wallet
                     </Button>
                 )}

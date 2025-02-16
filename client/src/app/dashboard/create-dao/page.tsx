@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useAccount } from 'wagmi';
-import { getWalletClient } from '@wagmi/core'
+import { getWalletClient, getPublicClient } from '@wagmi/core'
 import { config } from '@/config';
 import { ABI, byteCode } from "@/DAOContractInfo";
 import {
@@ -18,8 +18,11 @@ import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { CreateDAOSchema } from '@/schemas/index';
+import { useState } from 'react';
+import { Loader2 } from "lucide-react"
 
 export default function CreateDAOForm() {
+    const [deploying, setDeploying] = useState(false);
     const router = useRouter();
     const { address } = useAccount();
     const form = useForm<z.infer<typeof CreateDAOSchema>>({
@@ -34,35 +37,75 @@ export default function CreateDAOForm() {
     const { toast } = useToast();
     const onSubmit = async (data: z.infer<typeof CreateDAOSchema>) => {
         const client = await getWalletClient(config);
+        const publicClient = getPublicClient(config);
+
         if (!address) {
             console.log("Wallet not connected");
             toast({
-                description: 'Wallet not connected',
-                variant: 'destructive'
+                description: "Wallet not connected",
+                variant: "destructive",
             });
             return;
         }
 
         try {
-            const tx = await client.deployContract({
+            setDeploying(true);
+
+            // Deploy Contract
+            const txHash = await client.deployContract({
                 abi: ABI,
                 account: address,
                 args: [data.daoname, data.tokenname, data.tokensymbol],
                 bytecode: byteCode,
             });
 
-            console.log("Contract deployed:", tx);
+            console.log("Deployment Transaction Hash:", txHash);
+
+            // Wait for transaction receipt
+            const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+            console.log("Contract deployed at:", receipt.contractAddress);
 
             toast({
                 title: "Contract Deployed",
-                description: `Tx Hash: ${tx}`,
+                description: `Contract Address: ${receipt.contractAddress}`,
             });
 
-            form.reset();
+            const response = await fetch("/api/create-dao", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    daoname: data.daoname,
+                    tokenname: data.tokenname,
+                    tokensymbol: data.tokensymbol,
+                    contractAddress: receipt.contractAddress,
+                    address,
+                    memberAddresses: [],
+                }),
+            });
+            const result = await response.json();
+            setDeploying(false);
 
-            // Redirect to dashboard
-            router.push("/dashboard");
+            if (response.ok) {
+                console.log("DAO stored in DB:", result);
+                toast({
+                    title: "DAO Created",
+                    description: "Your DAO has been successfully created.",
+                });
+
+                router.push("/dashboard");
+            } else {
+                console.error("Failed to store DAO:", result.error);
+                toast({
+                    title: "Failed to Store DAO",
+                    description: result.error,
+                    variant: "destructive",
+                });
+            }
         } catch (error) {
+            setDeploying(false);
             console.error("Deployment failed:", error);
             toast({
                 title: "Deployment Failed",
@@ -117,7 +160,10 @@ export default function CreateDAOForm() {
                                 </FormItem>
                             )}
                         />
-                        <Button className='w-full' type="submit">Create DAO</Button>
+                        <Button disabled={deploying} className='w-full' type="submit">
+                            {deploying && <Loader2 className="animate-spin" />}
+                            {deploying ? 'Creating DAO' : 'Create DAO'}
+                        </Button>
                     </form>
                 </Form>
             </div>
