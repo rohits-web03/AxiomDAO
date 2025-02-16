@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract DataGovernanceDAO is ERC20 {
+    string public daoname;
     uint256 public constant MAX_SUPPLY = 1_000_000 * 10 ** 18; // 1M Tokens
     uint256 public proposalCount;
     uint256 public votingPeriod = 3 days; // Voting duration
@@ -30,7 +31,12 @@ contract DataGovernanceDAO is ERC20 {
     event ProposalExecuted(uint256 indexed proposalId, bool success);
     event MemberAdded(address indexed newMember);
 
-    constructor() ERC20("DataGovernanceToken", "DGT") {
+    constructor(
+        string memory _daoname,
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) {
+        daoname = _daoname;
         _mint(msg.sender, MAX_SUPPLY);
         isMember[msg.sender] = true; // Founder is first member
     }
