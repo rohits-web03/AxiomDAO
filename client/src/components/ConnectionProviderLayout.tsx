@@ -2,13 +2,22 @@
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { Button } from "@/components/ui/button";
-import { type ReactNode } from 'react'
 import { ModeToggle } from './theme-toggle';
+import { useRouter, usePathname } from "next/navigation";
+import { type ReactNode, useEffect } from 'react';
 
 export default function ConnectionProviderLayout({ children }: { children: ReactNode }) {
     const { connect } = useConnect();
     const { disconnect } = useDisconnect();
     const { address } = useAccount();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    useEffect(() => {
+        if (pathname !== '/' && !address) {
+            router.push('/');
+        }
+    }, [address, router]);
 
     return (
         <div>

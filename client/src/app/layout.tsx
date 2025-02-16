@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/mode-provider"
 import { Geist, Geist_Mono } from "next/font/google";
-import Provider from "../components/Providers";
-import { type ReactNode } from 'react'
+import { ThemeProvider } from "@/components/mode-provider"
 import { headers } from 'next/headers'
-import { cookieToInitialState } from 'wagmi'
 import getConfig from "next/config";
+import { cookieToInitialState } from 'wagmi'
+import Provider from "../components/Providers";
+import ConnectionProviderLayout from "@/components/ConnectionProviderLayout"
+import { Toaster } from "@/components/ui/toaster";
+import { type ReactNode } from 'react'
 import "./globals.css";
-import ConnectionProviderLayout from "@/components/ConnectionProviderLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
+          <Toaster />
           <Provider initialState={initialState}>
             <ConnectionProviderLayout>
               {children}
